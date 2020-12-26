@@ -1,0 +1,158 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.1/jquery.mobile-1.1.1.min.css" />
+<script type="text/javascript" charset="utf-8" src="cordova-1.9.0.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.1.1/jquery.mobile-1.1.1.min.js"></script>
+<script>
+	var target_div = "#contents";
+	var nextID = null;
+	var prevID = null;
+	var api_read_url = "http://10.0.2.2/public_html/wordpress_phonegap/?json=get_post&dev=1&p=";
+	var init_url = "http://10.0.2.2/public_html/wordpress_phonegap/?json=get_post&dev=1&p=1";
+	function getID(url) {
+		var str = new String(url)
+		var x = str.split("=");		
+		var id = x[1];
+		return id;
+	}
+	function readSinglePost (url,target_div) {
+		var URL = url//+"&callback=?";
+		console.log(URL);
+		jQuery.ajax({
+		    url: URL,
+		    dataType: 'json',		    
+		    success: function(data) {
+				jQuery(target_div).html("");
+				try {
+					jQuery(target_div).append("<h1>"+data.post.title+"</h1>");
+				        jQuery(target_div).append(data.post.content);
+					jQuery(target_div).append("<small>"+data.post.date+"</small>");
+				}
+				catch (e) {
+					;
+				}
+				try {
+					nextID = getID(data.next_url);
+				}
+				catch (e) {
+					;
+				}	
+				try {
+					prevID = getID(data.previous_url);
+				}
+				catch (e) {
+					;
+				}
+		    }
+		});		
+	}
+	
+	function getNext() {
+		jQuery("#next").click(function() {
+			var id = nextID;
+			var nextURL = api_read_url + id;
+			readSinglePost(nextURL, target_div);
+		});
+	}
+
+	function getPrevious() {
+		jQuery("#previous").click(function() {
+			var id = prevID;
+			var prevURL = api_read_url + id;
+			readSinglePost(prevURL, target_div);
+		});
+	}
+	
+	function createButton() {
+		jQuery("#create").click(function(){
+			jQuery("#form").toggle();
+		});
+	}
+	
+	function addContent(data) {
+		// post the content to wordpress
+		//alert(nounce);
+		var username = "&author=admin";
+		var pwd = "&user_password=123456";
+		var title = "&title="+jQuery("#post_title").val();
+		var content = "&content="+jQuery("#post_contents").val();
+		var post = "http://10.0.2.2/public_html/wordpress_phonegap/?json=posts/create_post&dev=1&status=publish"+pwd+username+title+content+"&nonce="+data.nonce;
+		console.log(post);
+		jQuery.ajax({
+		    url: post,
+		    type: "POST",
+		    dataType: 'json',   
+		    success: function(data) {
+				console.log(data);	
+				jQuery("#message").html("<p>Success</p>");
+		    }
+		});
+	}
+	
+	function getNonce() {
+		// retrieve nounce token
+
+		var get_nounce_url = "http://10.0.2.2/public_html/wordpress_phonegap/?json=get_nonce&dev=1&controller=posts&method=create_post";
+		var nonuce;
+		jQuery.ajax({
+		    url: get_nounce_url,
+		    type: "GET",
+		    dataType: 'json',   
+		    success: addContent
+		});	
+			
+	}
+	
+	function submitClick() {
+		jQuery("#create_post").click(function(){
+			getNonce();
+		})
+	}
+	
+	jQuery(document).ready(function() {		
+		readSinglePost(init_url, target_div);
+		getNext();
+		getPrevious();
+		createButton();
+		submitClick();
+
+	});
+</script>
+</header>
+<body>
+	<div id="main" data-role="page">
+		<div data-role="header">
+			<div data-role="controlgroup"  data-type="horizontal">
+				<a href="#" id="previous" data-role="button">Previous</a>
+				<a href="#" id="next" data-role="button">Next</a>
+				<!-- <button type="button" id="create" data-role="button">Create</button> -->
+				<a href="#create_form" data-role="button" data-transition="slide">Create</a>
+			</div>
+		</div>
+		
+			
+		
+		<div id="contents" data-role="content"></div>
+
+		
+	</div>
+	<div data-role="page" id="create_form" data-theme="c">
+		<div data-role="header" addBackBtn="true">
+			<a href="#" data-rel="back">Back</a>
+			<h1>Create a new Post</h1>
+		</div>
+		<div id="form" style="padding:15px;">
+			Title: <br /><input type="text" name="post_title" id="post_title" /><br />
+  			Content: <br />
+  			<textarea name="post_contents" id="post_contents"></textarea>
+  			<br />
+  			<input type="submit" value="Submit" id="create_post"/>
+  			<div id="message"></div>
+		</div>	
+
+	</div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html>
+<header>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>	
+<script>
+	function getNextID(url) {
+		var str = new String(url)
+		alert(str.charAt( str.length-1 ));
+		return;
+	}
+	function readSinglePost (url,target_div) {
+		var URL = url//+"&callback=?";
+		console.log(URL);
+		jQuery.ajax({
+		    url: URL,
+		    dataType: 'json',		    
+		    success: function(data) {
+		    	console.log(data);
+			jQuery(target_div).append("<h1>"+data.post.title+"</h1>");
+		    	jQuery(target_div).append(data.post.content);
+			jQuery(target_div).append("<small>"+data.post.date+"</small>");
+		    	console.log(data.post.content);
+		    }
+		});		
+	}
+
+	jQuery(document).ready(function() {
+		// jQuery("#title").html("<h1>Hello World</h1>");
+		// you might have to change this url
+		var url = "http://localhost/public_html/wordpress_phonegap/?json=get_post&dev=1&p=1";
+		var target_div = "#contents";
+		
+		readSinglePost(url, target_div);
+
+		getNextID(url);
+		
+	});
+</script>
+</header>
+<body>
+	<div id="main">
+		<div id="title"></div>
+		<div id="contents"></div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE HTML>
+<html>
+<header>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>	
+<script>
+	var target_div = "#contents";
+	var nextID = null;
+	var prevID = null;
+	var api_read_url = "http://localhost/public_html/wordpress_phonegap/?json=get_post&dev=1&p=";
+	var init_url = "http://localhost/public_html/wordpress_phonegap/?json=get_post&dev=1&p=1";
+	function getID(url) {
+		var str = new String(url)
+		var x = str.split("=");		
+		var id = x[1];
+		return id;
+	}
+	function readSinglePost (url,target_div) {
+		var URL = url//+"&callback=?";
+		console.log(URL);
+		jQuery.ajax({
+		    url: URL,
+		    dataType: 'json',		    
+		    success: function(data) {
+				jQuery(target_div).html("");
+				try {
+					jQuery(target_div).append("<h1>"+data.post.title+"</h1>");
+				    jQuery(target_div).append(data.post.content);
+					jQuery(target_div).append("<small>"+data.post.date+"</small>");
+				}
+				catch (e) {
+					;
+				}
+				try {
+					nextID = getID(data.next_url);
+				}
+				catch (e) {
+					;
+				}	
+				try {
+					prevID = getID(data.previous_url);
+				}
+				catch (e) {
+					;
+				}
+		    }
+		});		
+	}
+	
+	function getNext() {
+		jQuery("#next").click(function() {
+			var id = nextID;
+			var nextURL = api_read_url + id;
+			readSinglePost(nextURL, target_div);
+		});
+	}
+
+	function getPrevious() {
+		jQuery("#previous").click(function() {
+			var id = prevID;
+			var prevURL = api_read_url + id;
+			readSinglePost(prevURL, target_div);
+		});
+	}
+	
+	function createButton() {
+		jQuery("#create").click(function(){
+			jQuery("#form").toggle();
+		});
+	}
+	
+	function addContent(data) {
+		// post the content to wordpress
+		//alert(nounce);
+		var username = "&author=admin";
+		var pwd = "&user_password=123456";
+		var title = "&title="+jQuery("#post_title").val();
+		var content = "&content="+jQuery("#post_contents").val();
+		var post = "http://localhost/public_html/wordpress_phonegap/?json=posts/create_post&dev=1&status=publish"+pwd+username+title+content+"&nonce="+data.nonce;
+		console.log(post);
+		jQuery.ajax({
+		    url: post,
+		    type: "POST",
+		    dataType: 'json',   
+		    success: function(data) {
+				console.log(data);						
+		    }
+		});
+	}
+	
+	function getNonce() {
+		// retrieve nounce token
+
+		var get_nounce_url = "http://localhost/public_html/wordpress_phonegap/?json=get_nonce&dev=1&controller=posts&method=create_post";
+		var nonuce;
+		jQuery.ajax({
+		    url: get_nounce_url,
+		    type: "GET",
+		    dataType: 'json',   
+		    success: addContent
+		});	
+			
+	}
+	
+	function submitClick() {
+		jQuery("#create_post").click(function(){
+			getNonce();
+		})
+	}
+	
+	jQuery(document).ready(function() {		
+		readSinglePost(init_url, target_div);
+		getNext();
+		getPrevious();
+		createButton();
+		submitClick();
+
+	});
+</script>
+</header>
+<body>
+	<div id="main">
+		<button type="button" id="previous">Previous</button>
+		<button type="button" id="next">Next</button>
+		<button type="button" id="create">Create</button>		
+		<div id="form" style="display:none">
+			Title: <br /><input type="text" name="post_title" id="post_title" /><br />
+  			Content: <br />
+  			<textarea name="post_contents" id="post_contents"></textarea>
+  			<br />
+  			<input type="submit" value="Submit" id="create_post"/>
+  			<div id="message"></div>
+		</div>		
+		<div id="title"></div>
+		<div id="contents"></div>
+	</div>
+</body>
+</html>
